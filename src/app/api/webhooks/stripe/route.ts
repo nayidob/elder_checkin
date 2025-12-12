@@ -55,11 +55,18 @@ async function handleCheckoutCompleted(event: Stripe.Event) {
   let currentPeriodEnd: Date | undefined;
   try {
     if (session.subscription) {
-      const subscriptionId = typeof session.subscription === 'string'
-        ? session.subscription
-        : session.subscription.id;
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-      currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+      const subscriptionId =
+        typeof session.subscription === "string"
+          ? session.subscription
+          : session.subscription.id;
+      const subscription = (await stripe.subscriptions.retrieve(
+        subscriptionId,
+      )) as Stripe.Subscription;
+      // @ts-expect-error Stripe types may omit current_period_end in this SDK version
+      const currentEnd = subscription.current_period_end;
+      if (currentEnd) {
+        currentPeriodEnd = new Date(currentEnd * 1000);
+      }
     }
   } catch (err) {
     console.error("Stripe subscription fetch failed", err);
