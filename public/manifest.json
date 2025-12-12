@@ -1,6 +1,6 @@
 {
-  "name": "Sunny Check-In",
-  "short_name": "Sunny",
+  "name": "Karey Check-In",
+  "short_name": "Karey",
   "description": "AI companion for elderly wellness",
   "start_url": "/dashboard",
   "display": "standalone",

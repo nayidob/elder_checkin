@@ -6,13 +6,13 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Sunny | Daily Check-In Companion",
+  title: "Karey | Daily Check-In Companion",
   description: "AI companion for elderly wellness check-ins",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Sunny",
+    title: "Karey",
   },
 };
 

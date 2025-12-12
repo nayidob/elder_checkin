@@ -7,13 +7,13 @@ export default function Home() {
         <div className="mb-10 space-y-3">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-amber-700 shadow-sm ring-1 ring-amber-200">
             <span>☀️</span>
-            <span>Sunny Check-In</span>
+            <span>Karey Check-In</span>
           </div>
           <h1 className="text-4xl font-semibold leading-tight">
             A friendly daily video call for the people you love.
           </h1>
           <p className="text-lg text-slate-600">
-            Sunny pairs a lifelike avatar with voice AI to chat, observe, and
+            Karey pairs a lifelike avatar with voice AI to chat, observe, and
             share how your elder is feeling—all in a mobile-first experience.
           </p>
         </div>
