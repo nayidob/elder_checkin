@@ -3,11 +3,16 @@ import { MobileNav } from "@/components/MobileNav";
 import { WellnessScore } from "@/components/WellnessScore";
 import { getServiceSupabaseClient, type CheckIn, type Elder } from "@/lib/supabase";
 import { SignInButton, SignOutButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
-async function fetchElder() {
+async function fetchElder(userId: string) {
   const supabase = getServiceSupabaseClient();
-  const { data, error } = await supabase.from("elders").select("*").limit(1);
+  const { data, error } = await supabase
+    .from("elders")
+    .select("*")
+    .eq("user_id", userId)
+    .limit(1);
   if (error) throw error;
   return data?.[0] as Elder | undefined;
 }
@@ -34,7 +39,12 @@ async function fetchAlertCount(elderId: string) {
 }
 
 export default async function DashboardPage() {
-  const elder = await fetchElder();
+  const { userId } = await auth();
+  if (!userId) {
+    redirect("/sign-in");
+  }
+
+  const elder = await fetchElder(userId);
 
   if (!elder) {
     redirect("/register");
