@@ -8,7 +8,7 @@ const avatarOptions = ["👵", "👴", "🧓", "👨‍🦳", "👩‍🦳"];
 async function createElder(formData: FormData) {
   "use server";
 
-  const { userId } = auth();
+  const { userId } = await auth();
   if (!userId) throw new Error("Not signed in");
 
   const supabase = getServiceSupabaseClient();

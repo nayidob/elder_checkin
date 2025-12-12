@@ -5,7 +5,7 @@ import { getServiceSupabaseClient } from "@/lib/supabase";
 import { getStripe, stripeWebhookSecret } from "@/lib/stripe";
 
 export async function POST(req: Request) {
-  const signature = headers().get("stripe-signature");
+  const signature = (await headers()).get("stripe-signature");
   const rawBody = await req.text();
 
   if (!stripeWebhookSecret || !signature) {
@@ -55,10 +55,11 @@ async function handleCheckoutCompleted(event: Stripe.Event) {
   let currentPeriodEnd: Date | undefined;
   try {
     if (session.subscription) {
-      const subscription = await stripe.subscriptions.retrieve(
-        session.subscription,
-      );
-      currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+      const subscriptionId = typeof session.subscription === 'string'
+        ? session.subscription
+        : session.subscription.id;
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      currentPeriodEnd = new Date((subscription as any).current_period_end * 1000);
     }
   } catch (err) {
     console.error("Stripe subscription fetch failed", err);

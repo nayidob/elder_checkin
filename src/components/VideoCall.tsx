@@ -24,15 +24,7 @@ type AnamAudioInputStream = {
   close?: () => void;
 };
 
-type AnamClient = {
-  streamToVideoElement: (element: HTMLVideoElement) => Promise<void>;
-  createAgentAudioInputStream: (config: {
-    encoding: string;
-    sampleRate: number;
-    channels: number;
-  }) => AnamAudioInputStream;
-  close?: () => void;
-};
+type AnamClient = any;
 
 export type TranscriptMessage = { role: "user" | "agent"; content: string };
 
@@ -177,7 +169,9 @@ export function VideoCall({ elder, onCallEnd }: Props) {
         disableInputAudio: true,
       });
 
-      await anamClient.streamToVideoElement(videoRef.current);
+      if (videoRef.current) {
+        await anamClient.streamToVideoElement("anam-video");
+      }
 
       const audioInputStream = anamClient.createAgentAudioInputStream({
         encoding: "pcm_s16le",
@@ -253,6 +247,7 @@ export function VideoCall({ elder, onCallEnd }: Props) {
   return (
     <div className="video-container h-screen-mobile overflow-hidden bg-black">
       <video
+        id="anam-video"
         ref={videoRef}
         className="h-full w-full object-cover"
         autoPlay
