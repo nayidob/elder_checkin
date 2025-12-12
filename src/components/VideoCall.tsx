@@ -143,14 +143,16 @@ export function VideoCall({ elder, onCallEnd }: Props) {
           startedAt.current = Date.now();
         },
         onAudio: (base64Audio) => {
-          try {
-            playBase64Audio(base64Audio);
-            setCallState("speaking");
-            setStatus("Sunny is speaking");
-          } catch (err) {
-            setError("Audio stream error");
-            callbacks.onError?.(err);
-          }
+          void playBase64Audio(base64Audio).then(
+            () => {
+              setCallState("speaking");
+              setStatus("Sunny is speaking");
+            },
+            (err) => {
+              setError("Audio stream error");
+              callbacks.onError?.(err);
+            },
+          );
         },
         onUserTranscript: (text) => {
           addMessage({ role: "user", content: text });
@@ -244,19 +246,48 @@ export function VideoCall({ elder, onCallEnd }: Props) {
   );
 }
 
-function playBase64Audio(base64Audio: string) {
+let sharedAudioCtx: AudioContext | null = null;
+
+async function playBase64Audio(base64Audio: string) {
   try {
-    // ElevenLabs ConvAI defaults to MP3 output; fall back to wav if needed.
+    if (typeof window !== "undefined" && !sharedAudioCtx) {
+      sharedAudioCtx = new AudioContext();
+      await sharedAudioCtx.resume();
+    }
+
+    if (sharedAudioCtx) {
+      const binary = atob(base64Audio);
+      const len = binary.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i += 1) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      const audioBuffer = await sharedAudioCtx.decodeAudioData(
+        bytes.buffer.slice(0),
+      );
+      const source = sharedAudioCtx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(sharedAudioCtx.destination);
+      source.start();
+      return;
+    }
+
+    // Fallback to browser media element with common MIME types.
     const audio = new Audio(`data:audio/mpeg;base64,${base64Audio}`);
     const playPromise = audio.play();
     if (playPromise?.catch) {
-      playPromise.catch(() => {
-        const fallback = new Audio(`data:audio/wav;base64,${base64Audio}`);
-        void fallback.play();
-      });
+      await playPromise;
     }
   } catch (err) {
     console.error("Audio playback error", err);
+    // As a last resort, attempt wav fallback.
+    try {
+      const fallback = new Audio(`data:audio/wav;base64,${base64Audio}`);
+      await fallback.play();
+    } catch {
+      // swallow final failure
+    }
+    throw err;
   }
 }
 
