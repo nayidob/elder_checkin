@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createClient as createAnamClient } from "@anam-ai/js-sdk";
 import { CallControls } from "./CallControls";
 import { LiveTranscript } from "./LiveTranscript";
 import {
@@ -17,25 +16,6 @@ export type CallState =
   | "listening"
   | "speaking"
   | "ended";
-
-type AnamAudioInputStream = {
-  sendAudioChunk: (chunk: string) => void;
-  endSequence: () => void;
-  close?: () => void;
-};
-
-type AnamClient = {
-  streamToVideoElement: (
-    videoElementId: string,
-    userProvidedAudioStream?: MediaStream,
-  ) => Promise<void>;
-  createAgentAudioInputStream: (config: {
-    encoding: "pcm_s16le";
-    sampleRate: number;
-    channels: number;
-  }) => AnamAudioInputStream;
-  close?: () => void;
-};
 
 export type TranscriptMessage = { role: "user" | "agent"; content: string };
 
@@ -59,10 +39,7 @@ type Props = {
 };
 
 export function VideoCall({ elder, onCallEnd }: Props) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const connections = useRef<{
-    anamClient?: AnamClient;
-    audioInputStream?: AnamAudioInputStream;
     mic?: MicrophoneCapture;
     ws?: WebSocket;
   }>({});
@@ -98,17 +75,6 @@ export function VideoCall({ elder, onCallEnd }: Props) {
     }
     try {
       connections.current.ws?.close();
-    } catch {
-      // ignore
-    }
-    try {
-      connections.current.audioInputStream?.endSequence?.();
-      connections.current.audioInputStream?.close?.();
-    } catch {
-      // ignore
-    }
-    try {
-      connections.current.anamClient?.close?.();
     } catch {
       // ignore
     }
@@ -165,30 +131,10 @@ export function VideoCall({ elder, onCallEnd }: Props) {
     setError(null);
 
     try {
-      const sessionRes = await fetch("/api/anam-session", {
-        method: "POST",
-      });
-
-      if (!sessionRes.ok) {
-        throw new Error("Failed to start Anam session");
+      const elevenLabsAgentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID;
+      if (!elevenLabsAgentId) {
+        throw new Error("Missing ElevenLabs agent configuration");
       }
-
-      const { anamSessionToken, elevenLabsAgentId } = await sessionRes.json();
-      if (!videoRef.current) throw new Error("Video element missing");
-
-      const anamClient = createAnamClient(anamSessionToken, {
-        disableInputAudio: true,
-      });
-
-      if (videoRef.current) {
-        await anamClient.streamToVideoElement("anam-video");
-      }
-
-      const audioInputStream = anamClient.createAgentAudioInputStream({
-        encoding: "pcm_s16le",
-        sampleRate: 16000,
-        channels: 1,
-      });
 
       const callbacks: ElevenLabsCallbacks = {
         onReady: () => {
@@ -198,7 +144,6 @@ export function VideoCall({ elder, onCallEnd }: Props) {
         },
         onAudio: (base64Audio) => {
           try {
-            audioInputStream.sendAudioChunk(base64Audio);
             playBase64Audio(base64Audio);
             setCallState("speaking");
             setStatus("Sunny is speaking");
@@ -216,12 +161,10 @@ export function VideoCall({ elder, onCallEnd }: Props) {
           if (text) {
             addMessage({ role: "agent", content: text });
           }
-          audioInputStream.endSequence();
           setCallState("ready");
           setStatus("Connected");
         },
         onInterrupt: () => {
-          audioInputStream.endSequence();
           setCallState("listening");
           setStatus("Listening");
         },
@@ -242,8 +185,6 @@ export function VideoCall({ elder, onCallEnd }: Props) {
       );
 
       connections.current = {
-        anamClient,
-        audioInputStream,
         ws,
         mic,
       };
@@ -256,15 +197,7 @@ export function VideoCall({ elder, onCallEnd }: Props) {
   };
 
   return (
-    <div className="video-container h-screen-mobile overflow-hidden bg-black">
-      <video
-        id="anam-video"
-        ref={videoRef}
-        className="h-full w-full object-cover"
-        autoPlay
-        muted
-        playsInline
-      />
+    <div className="video-container h-screen-mobile overflow-hidden bg-gradient-to-b from-slate-900 to-slate-800">
 
       <div className="safe-area-top absolute left-4 top-4 z-10 rounded-full bg-white/80 px-4 py-2 text-xs font-semibold text-slate-800 shadow">
         {statusLabel}

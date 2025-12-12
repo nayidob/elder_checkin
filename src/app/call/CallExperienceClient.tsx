@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { CallResult, VideoCall } from "@/components/VideoCall";
 import type { Elder } from "@/lib/supabase";
@@ -19,18 +19,6 @@ type Props = {
 export function CallExperienceClient({ elder }: Props) {
   const [mode, setMode] = useState<"ready" | "active" | "ended">("ready");
   const [result, setResult] = useState<CallResult | null>(null);
-
-  useEffect(() => {
-    if (!result?.alerts || result.alerts.length === 0) return;
-    const webhook = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
-    if (!webhook) return;
-
-    fetch(webhook, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(result),
-    }).catch(() => null);
-  }, [result]);
 
   if (mode === "active") {
     return (
