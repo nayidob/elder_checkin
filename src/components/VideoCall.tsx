@@ -24,7 +24,18 @@ type AnamAudioInputStream = {
   close?: () => void;
 };
 
-type AnamClient = any;
+type AnamClient = {
+  streamToVideoElement: (
+    videoElementId: string,
+    userProvidedAudioStream?: MediaStream,
+  ) => Promise<void>;
+  createAgentAudioInputStream: (config: {
+    encoding: "pcm_s16le";
+    sampleRate: number;
+    channels: number;
+  }) => AnamAudioInputStream;
+  close?: () => void;
+};
 
 export type TranscriptMessage = { role: "user" | "agent"; content: string };
 
