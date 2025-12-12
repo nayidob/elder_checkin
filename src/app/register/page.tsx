@@ -1,6 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { getServiceSupabaseClient } from "@/lib/supabase";
 import { RegisterForm } from "./register-form";
 
@@ -42,7 +41,6 @@ async function createElder(formData: FormData) {
   }
 
   revalidatePath("/dashboard");
-  redirect("/dashboard");
 }
 
 export default function RegisterPage() {

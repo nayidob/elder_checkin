@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 const avatarOptions = ["👵", "👴", "🧓", "👨‍🦳", "👩‍🦳"];
 
@@ -19,6 +20,8 @@ export function RegisterForm({ createElder }: Props) {
   const [medicines, setMedicines] = useState<Medicine[]>([
     { name: "", hour: "", minute: "", taken: false },
   ]);
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const normalized = useMemo(
     () =>
@@ -44,7 +47,15 @@ export function RegisterForm({ createElder }: Props) {
         </p>
       </header>
 
-      <form action={createElder} className="space-y-6">
+      <form
+        action={(formData) =>
+          startTransition(async () => {
+            await createElder(formData);
+            router.push("/dashboard");
+          })
+        }
+        className="space-y-6"
+      >
         <section className="space-y-3">
           <p className="text-sm font-semibold text-slate-700">Avatar</p>
           <div className="grid grid-cols-5 gap-2">
@@ -271,9 +282,10 @@ export function RegisterForm({ createElder }: Props) {
         <div className="sticky bottom-6 safe-area-bottom">
           <button
             type="submit"
-            className="flex h-14 w-full items-center justify-center rounded-2xl bg-amber-500 text-base font-semibold text-white shadow-lg shadow-amber-200 transition hover:bg-amber-600"
+            disabled={isPending}
+            className="flex h-14 w-full items-center justify-center rounded-2xl bg-amber-500 text-base font-semibold text-white shadow-lg shadow-amber-200 transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-amber-300"
           >
-            Save and continue
+            {isPending ? "Saving…" : "Save and continue"}
           </button>
         </div>
       </form>
