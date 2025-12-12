@@ -274,10 +274,7 @@ async function playBase64Audio(base64Audio: string) {
 
     // Fallback to browser media element with common MIME types.
     const audio = new Audio(`data:audio/mpeg;base64,${base64Audio}`);
-    const playPromise = audio.play();
-    if (playPromise?.catch) {
-      await playPromise;
-    }
+    await audio.play();
   } catch (err) {
     console.error("Audio playback error", err);
     // As a last resort, attempt wav fallback.
