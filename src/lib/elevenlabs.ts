@@ -101,8 +101,14 @@ export async function connectElevenLabs(
   ws.onmessage = (event) => {
     try {
       const msg = JSON.parse(event.data as string);
-      if (msg.type === "audio" && msg.audio) {
-        callbacks.onAudio?.(msg.audio);
+
+      const audioPayload =
+        msg.audio ??
+        msg.audio_base64 ??
+        msg.audio_base_64 ??
+        msg.audio_event?.audio_base_64;
+      if (audioPayload) {
+        callbacks.onAudio?.(audioPayload);
       }
 
       if (msg.type === "user_transcript" && msg.user_transcript?.transcript) {
@@ -138,7 +144,7 @@ export async function connectElevenLabs(
         ws.send(
           JSON.stringify({
             type: "user_audio_chunk",
-            audio: arrayBufferToBase64(buffer),
+            user_audio_chunk: arrayBufferToBase64(buffer),
           }),
         );
       });

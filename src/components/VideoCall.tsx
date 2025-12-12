@@ -246,8 +246,15 @@ export function VideoCall({ elder, onCallEnd }: Props) {
 
 function playBase64Audio(base64Audio: string) {
   try {
-    const audio = new Audio(`data:audio/wav;base64,${base64Audio}`);
-    void audio.play();
+    // ElevenLabs ConvAI defaults to MP3 output; fall back to wav if needed.
+    const audio = new Audio(`data:audio/mpeg;base64,${base64Audio}`);
+    const playPromise = audio.play();
+    if (playPromise?.catch) {
+      playPromise.catch(() => {
+        const fallback = new Audio(`data:audio/wav;base64,${base64Audio}`);
+        void fallback.play();
+      });
+    }
   } catch (err) {
     console.error("Audio playback error", err);
   }
