@@ -2,6 +2,7 @@ import { ElderCard } from "@/components/ElderCard";
 import { MobileNav } from "@/components/MobileNav";
 import { WellnessScore } from "@/components/WellnessScore";
 import { getServiceSupabaseClient, type CheckIn, type Elder } from "@/lib/supabase";
+import { SignInButton, SignOutButton, SignedIn, SignedOut } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 
 async function fetchElder() {
@@ -64,8 +65,24 @@ export default async function DashboardPage() {
           <p className="text-sm text-amber-700">☀️ Sunny</p>
           <h1 className="text-2xl font-semibold">Family Dashboard</h1>
         </div>
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-xl shadow ring-1 ring-amber-100">
-          {elder!.avatar_emoji ?? "👵"}
+        <div className="flex items-center gap-3">
+          <SignedIn>
+            <SignOutButton redirectUrl="/sign-in">
+              <button className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-800 shadow ring-1 ring-amber-100 hover:bg-amber-50">
+                Log out
+              </button>
+            </SignOutButton>
+          </SignedIn>
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-800 shadow ring-1 ring-amber-100 hover:bg-amber-50">
+                Log in
+              </button>
+            </SignInButton>
+          </SignedOut>
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-xl shadow ring-1 ring-amber-100">
+            {elder!.avatar_emoji ?? "👵"}
+          </div>
         </div>
       </header>
 
