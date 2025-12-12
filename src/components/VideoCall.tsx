@@ -251,20 +251,27 @@ let sharedAudioCtx: AudioContext | null = null;
 async function playBase64Audio(base64Audio: string) {
   try {
     if (typeof window !== "undefined" && !sharedAudioCtx) {
-      sharedAudioCtx = new AudioContext();
+      sharedAudioCtx = new AudioContext({ sampleRate: 16000 });
       await sharedAudioCtx.resume();
     }
 
     if (sharedAudioCtx) {
+      // ElevenLabs ConvAI audio is PCM16LE mono. Decode manually.
       const binary = atob(base64Audio);
-      const len = binary.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i += 1) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      const audioBuffer = await sharedAudioCtx.decodeAudioData(
-        bytes.buffer.slice(0),
+      const frameCount = binary.length / 2;
+      const audioBuffer = sharedAudioCtx.createBuffer(
+        1,
+        frameCount,
+        sharedAudioCtx.sampleRate,
       );
+      const channel = audioBuffer.getChannelData(0);
+      for (let i = 0; i < frameCount; i += 1) {
+        const lo = binary.charCodeAt(i * 2);
+        const hi = binary.charCodeAt(i * 2 + 1);
+        const sample = (hi << 8) | lo;
+        const int16 = sample >= 0x8000 ? sample - 0x10000 : sample;
+        channel[i] = int16 / 0x8000;
+      }
       const source = sharedAudioCtx.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(sharedAudioCtx.destination);
@@ -272,19 +279,11 @@ async function playBase64Audio(base64Audio: string) {
       return;
     }
 
-    // Fallback to browser media element with common MIME types.
-    const audio = new Audio(`data:audio/mpeg;base64,${base64Audio}`);
+    // Browser fallback to wav container.
+    const audio = new Audio(`data:audio/wav;base64,${base64Audio}`);
     await audio.play();
   } catch (err) {
     console.error("Audio playback error", err);
-    // As a last resort, attempt wav fallback.
-    try {
-      const fallback = new Audio(`data:audio/wav;base64,${base64Audio}`);
-      await fallback.play();
-    } catch {
-      // swallow final failure
-    }
-    throw err;
   }
 }
 
